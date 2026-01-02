@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>SiliconFlow 工作台</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg-color: #f8fafc;
+            --text-dark: #1e293b;
+            --text-light: #475569;
+            --radius: 24px;
+            
+            /* 卡片主题色渐变 */
+            --chat-bg: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%);
+            --chat-text: #3730a3;
+            --audio-bg: linear-gradient(135deg, #ccfbf1 0%, #99f6e4 100%);
+            --audio-text: #115e59;
+            --image-bg: linear-gradient(135deg, #ffedd5 0%, #fed7aa 100%);
+            --image-text: #9a3412;
+            --video-bg: linear-gradient(135deg, #ffe4e6 0%, #fecdd3 100%);
+            --video-text: #9f1239;
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-color);
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .header {
+            width: 100%;
+            max-width: 1200px;
+            padding: 30px 24px 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+        }
+
+        .brand {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: var(--text-dark);
+            letter-spacing: -0.5px;
+        }
+
+        .settings-btn {
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            padding: 10px 18px;
+            border-radius: 50px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-dark);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: 0.2s;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.03);
+            position: relative;
+        }
+
+        .settings-btn:active { transform: scale(0.95); }
+        .settings-btn.active { background: var(--text-dark); color: #fff; border-color: var(--text-dark); }
+
+        .config-panel {
+            width: 100%;
+            max-width: 600px;
+            max-height: 0;
+            overflow: hidden;
+            background: #fff;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s, margin 0.3s;
+            opacity: 0;
+            padding: 0 24px;
+        }
+
+        .config-panel.open {
+            max-height: 400px;
+            opacity: 1;
+            padding: 24px;
+            margin: 10px 0 20px 0;
+        }
+
+        .input-group { margin-bottom: 15px; }
+        .input-group label { display: block; font-size: 0.8rem; color: var(--text-light); margin-bottom: 6px; font-weight: 600; }
+        
+        input {
+            width: 100%;
+            padding: 12px 16px;
+            background: #f1f5f9;
+            border: 2px solid transparent;
+            border-radius: 12px;
+            font-size: 0.95rem;
+            color: var(--text-dark);
+            outline: none;
+            transition: 0.2s;
+        }
+        
+        input:focus { background: #fff; border-color: #94a3b8; }
+
+        .btn-save {
+            width: 100%;
+            padding: 12px;
+            background: var(--text-dark);
+            color: #fff;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            padding: 20px 24px 60px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .grid-menu {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            grid-template-rows: repeat(2, 1fr);
+            gap: 16px;
+            width: 100%;
+            max-width: 800px;
+        }
+
+        .nav-card {
+            border-radius: var(--radius);
+            padding: 24px;
+            text-decoration: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            aspect-ratio: 1 / 1.1;
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s;
+            box-shadow: 0 10px 20px -10px rgba(0,0,0,0.1);
+            position: relative;
+            overflow: hidden;
+            cursor: pointer; /* 确保显示手型指针 */
+        }
+
+        .nav-card:hover { transform: translateY(-5px) scale(1.02); box-shadow: 0 20px 30px -10px rgba(0,0,0,0.15); }
+        .nav-card:active { transform: scale(0.98); }
+
+        .card-chat { background: var(--chat-bg); color: var(--chat-text); }
+        .card-audio { background: var(--audio-bg); color: var(--audio-text); }
+        .card-image { background: var(--image-bg); color: var(--image-text); }
+        .card-video { background: var(--video-bg); color: var(--video-text); }
+
+        .card-icon {
+            font-size: 28px;
+            margin-bottom: 15px;
+            width: 50px;
+            height: 50px;
+            background: rgba(255,255,255,0.4);
+            backdrop-filter: blur(5px);
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .nav-card h3 {
+            font-size: 1.3rem;
+            margin: 0 0 4px 0;
+            font-weight: 700;
+        }
+
+        .nav-card p {
+            margin: 0;
+            font-size: 0.8rem;
+            opacity: 0.8;
+            font-weight: 500;
+            line-height: 1.2;
+        }
+
+        .notification-dot {
+            width: 8px;
+            height: 8px;
+            background: #ef4444;
+            border-radius: 50%;
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            display: none;
+        }
+
+        @media (min-width: 1024px) {
+            .grid-menu {
+                gap: 24px;
+                max-width: 900px;
+            }
+            .config-panel {
+                position: absolute;
+                top: 80px;
+                right: 24px;
+                width: 350px;
+            }
+        }
+
+        @media (min-width: 2000px) {
+            .grid-menu { max-width: 1100px; gap: 32px; }
+            .nav-card h3 { font-size: 1.6rem; }
+            .nav-card p { font-size: 1rem; }
+            .card-icon { width: 64px; height: 64px; font-size: 36px; }
+        }
+
+        #toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: rgba(30, 41, 59, 0.9);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 50px;
+            transition: 0.3s;
+            opacity: 0;
+            z-index: 1000;
+        }
+        #toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+    </style>
+</head>
+<body>
+
+    <header class="header">
+        <div class="brand">SiliconFlow</div>
+        <div class="settings-btn" onclick="toggleConfig()">
+            <div class="notification-dot" id="auth-dot"></div>
+            <i class="fas fa-sliders-h"></i> 配置 API
+        </div>
+    </header>
+
+    <div class="config-panel" id="configPanel">
+        <div class="input-group">
+            <label>API Endpoint</label>
+            <input type="text" id="baseUrl" value="https://api.siliconflow.cn/v1">
+        </div>
+        <div class="input-group">
+            <label>API Secret Key</label>
+            <input type="password" id="apiKey" placeholder="sk-...">
+        </div>
+        <button class="btn-save" onclick="saveConfig()">保存配置</button>
+    </div>
+
+    <div class="container">
+        <div class="grid-menu">
+            <a href="chat.html" class="nav-card card-chat">
+                <div class="card-icon"><i class="fas fa-comments"></i></div>
+                <div>
+                    <h3>对话 Chat</h3>
+                    <p>DeepSeek, Qwen AI</p>
+                </div>
+            </a>
+
+            <a href="audio.html" class="nav-card card-audio">
+                <div class="card-icon"><i class="fas fa-microphone-lines"></i></div>
+                <div>
+                    <h3>语音 Audio</h3>
+                    <p>CosyVoice, MOSS</p>
+                </div>
+            </a>
+
+            <a href="image.html" class="nav-card card-image">
+                <div class="card-icon"><i class="fas fa-image"></i></div>
+                <div>
+                    <h3>生图 Image</h3>
+                    <p>Flux, SD 专业绘图</p>
+                </div>
+            </a>
+
+            <a href="video.html" class="nav-card card-video">
+                <div class="card-icon"><i class="fas fa-video"></i></div>
+                <div>
+                    <h3>视频 Video</h3>
+                    <p>文生视频 Generation</p>
+                </div>
+            </a>
+        </div>
+    </div>
+
+    <div id="toast"></div>
+
+    <script>
+        window.onload = () => {
+            const key = localStorage.getItem('sf_key');
+            const url = localStorage.getItem('sf_url');
+            if (!key) {
+                document.getElementById('auth-dot').style.display = 'block';
+            } else {
+                document.getElementById('apiKey').value = key;
+            }
+            if(url) document.getElementById('baseUrl').value = url;
+        };
+
+        function toggleConfig() {
+            const panel = document.getElementById('configPanel');
+            const btn = document.querySelector('.settings-btn');
+            panel.classList.toggle('open');
+            btn.classList.toggle('active');
+        }
+
+        function saveConfig() {
+            const key = document.getElementById('apiKey').value.trim();
+            const url = document.getElementById('baseUrl').value.trim();
+            if(!key) {
+                showToast('❌ 请输入 API Key');
+                return;
+            }
+            localStorage.setItem('sf_key', key);
+            localStorage.setItem('sf_url', url || 'https://api.siliconflow.cn/v1');
+            document.getElementById('auth-dot').style.display = 'none';
+            showToast('✅ 配置已保存');
+            setTimeout(toggleConfig, 800);
+        }
+
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.innerText = msg;
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 2000);
+        }
+    </script>
+</body>
+</html>
